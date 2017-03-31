@@ -1,16 +1,14 @@
-const AV = require('leanengine');
-const appConstants = require('./appConstants');
-const _find = require('lodash/find');
-
-const statusValues = appConstants.statusValues;
-const certTypes = appConstants.certTypes;
-const badges = appConstants.badges;
+import _find from 'lodash/find';
+import AV from 'leanengine';
+import { statusValues, certTypes, badges } from '../appConstants';
 
 /**
  * 一个简单的云代码方法
  */
-AV.Cloud.define('hello', function(request, response) {
-  response.success({ hello: ' world'});
+AV.Cloud.define('hello', async (request, response) => {
+  await new Promise((resolve) => setTimeout(() => {
+    response.success({ hello: ' world'});
+  }, 1000));
 });
 
 // users&roles
@@ -101,8 +99,8 @@ AV.Cloud.define('searchCerts', (request, response) => {
     .then((certs) => {
       response.success(certs);
     }).catch((err) => {
-      response.error(err);
-    });
+    response.error(err);
+  });
 });
 // certs
 AV.Cloud.define('certs.changeStatus', (request, response) => {
