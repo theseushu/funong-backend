@@ -25,8 +25,41 @@ AV.Cloud.define('createProduct', async (request, response) => {
         attrSchema.create(product, value);
       }
     });
-    product.set('keywords', generateKeywords(attrs, schema.type));
     const savedProduct = await product.save(null, {
+      fetchWhenSave: true,
+      sessionToken,
+    });
+    response.success(savedProduct);
+  } catch (err) {
+    console.error(err);
+    response.error(err);
+  }
+});
+
+AV.Cloud.define('updateProduct', async (request, response) => {
+  try {
+    const { sessionToken, currentUser,  params: { type, objectId, ...attrs } } = request;
+    if (!objectId) {
+      throw new Error('objectId is empty');
+    }
+    const schema = productSchemas[type];
+    const { table, attributes } = schema;
+    const toSave = AV.Object.createWithoutData(table, objectId);
+    console.log(attrs.status)
+    if (attrs.status !== statusValues.unverified.value) { // new product can be only unavailable or unverified (未上架/已上架)
+      attrs.status = statusValues.unavailable.value;
+    }
+    _map(attrs, (value, key) => {
+      if (!_isUndefined(value)) {
+        const attrSchema = attributes[key];
+        if (!attrSchema || !attrSchema.update) {
+          throw new Error(`Unsupported attr(${key}) in ${table} updating`);
+        }
+        attrSchema.update(toSave, value);
+      }
+    });
+    toSave.set('keywords', generateKeywords(schema.type, attrs));
+    const savedProduct = await toSave.save(null, {
       fetchWhenSave: true,
       sessionToken,
     });
