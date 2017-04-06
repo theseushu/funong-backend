@@ -1,6 +1,5 @@
 import AV from 'leanengine';
 import { calculateOrder } from '../utils/orderUtils';
-import orderToJSON from './utils/converters/order';
 
 class Order extends AV.Object {}
 AV.Object.register(Order);

@@ -1,13 +1,15 @@
 export catalogs from './catalogs';
 export productTypes from './productTypes';
+export { productNames } from './productTypes';
 export serviceTypes from './services';
 export orderFeeTypes from './orderFeeTypes';
 
 export const statusValues = {
-  unverified: { value: 0, title: '待审核' },
-  verified: { value: 1, title: '已通过' },
-  rejected: { value: 2, title: '已拒绝' },
-  removed: { value: 3, title: '已删除' },
+  rejected: { value: -2, title: '审核失败' },
+  removed: { value: -1, title: '已删除' },
+  unavailable: { value: 0, title: '未上架' },
+  unverified: { value: 1, title: '待审核' },
+  verified: { value: 2, title: '已通过' },
 
   unconfirmed: { value: 11, title: '待确认' },
   billed: { value: 12, title: '待付款' },
@@ -35,36 +37,18 @@ export const certTypes = {
   expert: { value: 'expert', title: '专家认证' },
 };
 
-export const catalogTypes = {
-  supply: {
-    farm: { title: '农产品', value: '农产品' },
-  },
-  shop: {
-    shop: { title: '商品分类', value: '商品分类' },
-    farm: { title: '农产品', value: '农产品' },
-  },
-  logistics: {},
-  trip: {},
-};
-
 export const units = [
-  '斤', '两', '公斤', '克', '袋', '盒', '箱', '包', '只', '条', '台',
+  '斤', '两', '公斤', '克', '袋', '盒', '箱', '包', '只', '条', '台', '本', '张',
 ];
 export const productLabels = {
-  available: { title: '上架', key: 'available', value: 'available' },
 };
 
 export const shopProductLabels = {
   ...productLabels,
-  recommend: { title: '店长推荐', key: 'recommend', value: 'recommend' },
-  agent: { title: '可代销', key: 'agent', value: 'agent' },
 };
 
 export const supplyLabels = {
   ...productLabels,
-  includesTransportation: { title: '包运费', key: 'includesTransportation', value: 'includesTransportation' },
-  supportsLogistics: { title: '协助找物流', key: 'supportsLogistics', value: 'supportsLogistics' },
-  supportsDelivery: { title: '支持走快递', key: 'supportsDelivery', value: 'supportsDelivery' },
 };
 
 export const logisticsLabels = {
