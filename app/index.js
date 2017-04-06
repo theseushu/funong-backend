@@ -10,7 +10,6 @@ AV.init({
   appKey: process.env.LEANCLOUD_APP_KEY || 'JNUXol0O66lg5H24kxcmcnOt',
   masterKey: process.env.LEANCLOUD_APP_MASTER_KEY || 'F0aA83DrHS5w31FfCGdOO3wh',
 });
-
 // 如果不希望使用 masterKey 权限，可以将下面一行删除
 AV.Cloud.useMasterKey();
 

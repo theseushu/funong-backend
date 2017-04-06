@@ -1,11 +1,8 @@
-import React from 'react';
 import _reduce from 'lodash/reduce';
 import _find from 'lodash/find';
 import _union from 'lodash/union';
 import _endsWith from 'lodash/endsWith';
-import { statusValues, districtLevels, badges } from 'appConstants';
-import styles from 'modules/common/styles';
-import { ImageBadge } from 'modules/common/badge';
+import { statusValues, districtLevels, badges } from '../appConstants';
 
 export const formatAddress = ({ country = '', province = '', city = '', district = '' }) =>
   `${country === '中国' ? '' : country}${province}${city}${district}`;
@@ -59,26 +56,6 @@ export const formatDeliveryFee = (minimum, deliveryFee) => {
   return `${minimum}元起送，运费${deliveryFee}`;
 };
 
-export const formatStatus = (statusValue) => {
-  const status = _find(statusValues, (s) => s.value === statusValue) || {};
-  const { title, value } = status;
-  let className;
-  switch (value) {
-    case statusValues.unverified.value:
-      className = styles.colorUnverified;
-      break;
-    case statusValues.rejected.value:
-      className = styles.colorRejected;
-      break;
-    case statusValues.verified.value:
-      className = styles.colorVerified;
-      break;
-    default:
-      className = styles.colorAccent;
-  }
-  return (<span className={className}>{title}</span>);
-};
-
 const miniSecsInHour = 3600 * 1000;
 const miniSecsInDay = miniSecsInHour * 24;
 const miniSecsInWeek = miniSecsInDay * 7;
@@ -127,26 +104,3 @@ export function humanizeDistance(distance) {
   return `${Math.round(distance / 1000)}公里`;
 }
 
-export function createBadgesForUser(user, size) {
-  if (!user || !user.badges) {
-    return [];
-  }
-  return user.badges.map((badge, i) => {
-    let name;
-    switch (badge) {
-      case badges.idVerified.value:
-        name = 'personal';
-        break;
-      case badges.companyVerified.value:
-        name = 'company';
-        break;
-      case badges.expertVerified.value:
-        name = 'expert';
-        break;
-      default:
-        console.error(`unknown badge: ${badge}`); // eslint-disable-line
-        return null;
-    }
-    return <ImageBadge key={i} name={name} size={size} tooltip />;
-  });
-}

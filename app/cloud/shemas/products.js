@@ -1,7 +1,7 @@
 import _reduce from 'lodash/reduce';
-import AV from 'leancloud-storage';
-import { productTypes } from 'appConstants';
-import { productTables } from '../../constants';
+import AV from 'leanengine';
+import { productTypes } from '../../appConstants';
+import { productTables } from '../constants';
 import { attributes as attrConverters } from '../converters/product';
 
 const setRequiredAttr = (product, attrName, value) => {
@@ -24,6 +24,8 @@ export const updatedAt = {
 };
 
 export const status = {
+  create: (product, value) => setRequiredAttr(product, 'status', value),
+  update: (product, value) => setRequiredAttr(product, 'status', value),
   search: (query, value) => {
     if (value && value.length > 0) {
       query.containedIn('status', value);

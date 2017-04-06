@@ -1,5 +1,5 @@
 import _find from 'lodash/find';
-import { badges } from 'appConstants';
+import { badges } from '../appConstants';
 
 export const isUserIDVerified = (user) => {
   if (!user) {

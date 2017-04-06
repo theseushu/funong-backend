@@ -1,7 +1,7 @@
 import _isEmpty from 'lodash/isEmpty';
 import _reduce from 'lodash/reduce';
 import _uniq from 'lodash/uniq';
-import { productTypes } from 'appConstants';
+import { productTypes } from '../appConstants';
 import { briefAddress } from './displayUtils';
 
 const categoryToKeywords = (category) => (!category || !category.name) ? [] : [category.name];

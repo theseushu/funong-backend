@@ -12,8 +12,8 @@ AV.Cloud.define('createProduct', async (request, response) => {
     const schema = productSchemas[type];
     const { table, attributes } = schema;
     const product = new schema.Class();
-    if (status !== statusValues.unverified) { // new product can be only unavailable or unverified (未上架/已上架)
-      attrs.status = statusValues.unavailable;
+    if (attrs.status !== statusValues.unverified.value) { // new product can be only unavailable or unverified (未上架/已上架)
+      attrs.status = statusValues.unavailable.value;
     }
     attrs.owner = { objectId: currentUser.id };
     _map(attrs, (value, key) => {
@@ -22,10 +22,10 @@ AV.Cloud.define('createProduct', async (request, response) => {
         if (!attrSchema || !attrSchema.create) {
           throw new Error(`Unsupported attr(${key}) in ${table} creating`);
         }
-        attrSchema.create(AV, product, value);
+        attrSchema.create(product, value);
       }
     });
-    product.set('keywords', generateKeywords(schema.type, params));
+    product.set('keywords', generateKeywords(attrs, schema.type));
     const savedProduct = await product.save(null, {
       fetchWhenSave: true,
       sessionToken,
@@ -47,7 +47,7 @@ const createQuery = (schema, { sort, page, pageSize, ...params }) => {
       if (!attrSchema || !attrSchema.search) {
         throw new Error(`Unsupported attr(${key}) in ${table} searching`);
       }
-      attrSchema.search(AV, query, value);
+      attrSchema.search(query, value);
     }
   });
   if (sort && sort.sort) {
