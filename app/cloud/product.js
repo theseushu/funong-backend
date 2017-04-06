@@ -101,7 +101,6 @@ const createQuery = (schema, { sort, page, pageSize, ...params }) => {
 AV.Cloud.define('pageProducts', async (request, response) => {
   try {
     const { sessionToken, currentUser,  params } = request;
-    // const { type, owner, shop, category, species, location, status, keywords, sort, page, pageSize  }
     const { type, sort, page, pageSize, owner, ...otherParams } = params;
     const schema = productSchemas[type];
     if (!schema) {
