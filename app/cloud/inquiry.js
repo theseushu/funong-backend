@@ -1,13 +1,13 @@
 import AV from 'leanengine';
 
-const createQuery = ({ sort, page, pageSize, category, species, keyword, provinces, status, owner }) => {
+const createQuery = ({ sort, page, pageSize, category, species, provinces, status, owner }) => {
   let query = new AV.Query('Inquiry')
     .include(['category', 'species', 'owner', 'owner.avatar']);
   if (category) {
-    query.equalTo('category', AV.Object.createWithoutData('Category', category));
+    query.equalTo('category', AV.Object.createWithoutData('Category', category.objectId));
   }
   if (species) {
-    query.equalTo('species', AV.Object.createWithoutData('Species', species));
+    query.containedIn('species', species.map((s) => AV.Object.createWithoutData('Species', s.objectId)));
   }
   if (provinces && provinces.length > 0) {
     query.containedIn('address.province', provinces);
@@ -17,13 +17,6 @@ const createQuery = ({ sort, page, pageSize, category, species, keyword, provinc
   }
   if (owner) {
     query.equalTo('owner', AV.Object.createWithoutData('_User', owner));
-  }
-  if (keyword) {
-    const keywordQuery = AV.Query.or(
-      new AV.Query('Inquiry').contains('name', keyword),
-      new AV.Query('Inquiry').contains('desc', keyword),
-    );
-    query = AV.Query.and(query, keywordQuery);
   }
   if (sort && sort.sort) {
     if (sort.order === 'asc') {
@@ -43,9 +36,9 @@ const createQuery = ({ sort, page, pageSize, category, species, keyword, provinc
 AV.Cloud.define('pageInquiries', async (request, response) => {
   try {
     const { sessionToken, params } = request;
-    const { category, species, keyword, provinces, status, owner, sort, page = 1, pageSize = 20 } = params;
-    const query = createQuery({ category, species, keyword, provinces, status, owner, sort, page, pageSize });
-    const countQuery = createQuery({ category, species, keyword, provinces, status, owner });
+    const { category, species, provinces, status, owner, sort, page = 1, pageSize = 20 } = params;
+    const query = createQuery({ category, species, provinces, status, owner, sort, page, pageSize });
+    const countQuery = createQuery({ category, species, provinces, status, owner });
     const [count, inquiries] = await Promise.all([countQuery.count({ sessionToken }), query.find({ sessionToken })]);
     const result = {
       total: count,
