@@ -25,6 +25,7 @@ AV.Cloud.define('createProduct', async (request, response) => {
         attrSchema.create(product, value);
       }
     });
+    product.set('keywords', generateKeywords(attrs, type));
     const savedProduct = await product.save(null, {
       fetchWhenSave: true,
       sessionToken,
@@ -45,7 +46,6 @@ AV.Cloud.define('updateProduct', async (request, response) => {
     const schema = productSchemas[type];
     const { table, attributes } = schema;
     const toSave = AV.Object.createWithoutData(table, objectId);
-    console.log(attrs.status)
     if (attrs.status !== statusValues.unverified.value) { // new product can be only unavailable or unverified (未上架/已上架)
       attrs.status = statusValues.unavailable.value;
     }
@@ -58,7 +58,7 @@ AV.Cloud.define('updateProduct', async (request, response) => {
         attrSchema.update(toSave, value);
       }
     });
-    toSave.set('keywords', generateKeywords(schema.type, attrs));
+    toSave.set('keywords', generateKeywords(attrs, type));
     const savedProduct = await toSave.save(null, {
       fetchWhenSave: true,
       sessionToken,
@@ -128,7 +128,7 @@ AV.Cloud.define('pageProducts', async (request, response) => {
 
     const result = {
       total: count,
-      totalPages: Math.ceil(count / page),
+      totalPages: Math.ceil(count / pageSize),
       page,
       pageSize,
       first: page === 1,

@@ -42,7 +42,7 @@ AV.Cloud.define('pageInquiries', async (request, response) => {
     const [count, inquiries] = await Promise.all([countQuery.count({ sessionToken }), query.find({ sessionToken })]);
     const result = {
       total: count,
-      totalPages: Math.ceil(count / page),
+      totalPages: Math.ceil(count / pageSize),
       page,
       pageSize,
       first: page === 1,

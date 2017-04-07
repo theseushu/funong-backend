@@ -4,9 +4,9 @@ import _uniq from 'lodash/uniq';
 import { productTypes } from '../appConstants';
 import { briefAddress } from './displayUtils';
 
-const categoryToKeywords = (category) => (!category || !category.objectId) ? [] : [category.objectId];
+const categoryToKeywords = (category) => (!category || !category.objectId) ? [] : [category.objectId, category.name];
 
-const speciesToKeywords = (species) => (!species || !species.objectId) ? [] : [species.objectId];
+const speciesToKeywords = (species) => (!species || !species.objectId) ? [] : [species.objectId, species.name];
 
 const nameToKeywords = (name) => name ? [name] : [];
 
