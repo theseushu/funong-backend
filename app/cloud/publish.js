@@ -3,67 +3,69 @@ import _isUndefined from 'lodash/isUndefined';
 import _map from 'lodash/map';
 import AV from 'leanengine';
 import { statusValues } from '../appConstants';
-import { products as productSchemas } from './shemas';
+import { publishes as publishesSchemas } from './shemas';
 import { generateKeywords } from '../utils/productUtils';
 
-AV.Cloud.define('createProduct', async (request, response) => {
+AV.Cloud.define('createPublish', async (request, response) => {
   try {
     const { sessionToken, currentUser,  params: { type, ...attrs } } = request;
-    const schema = productSchemas[type];
+    const schema = publishesSchemas[type];
     const { table, attributes } = schema;
-    const product = new schema.Class();
-    if (attrs.status !== statusValues.unverified.value) { // new product can be only unavailable or unverified (未上架/已上架)
+    const toSave = new schema.Class();
+    if (attrs.status !== statusValues.unverified.value) { // new publish can be only unavailable or unverified (未上架/已上架)
       attrs.status = statusValues.unavailable.value;
     }
-    attrs.owner = { objectId: currentUser.id };
-    _map(attrs, (value, key) => {
+    if (attributes.owner && attributes.owner.create) {
+      attrs.owner = {objectId: currentUser.id};
+    }
+    _map(attrs, (value, type) => {
       if (!_isUndefined(value)) {
-        const attrSchema = attributes[key];
+        const attrSchema = attributes[type];
         if (!attrSchema || !attrSchema.create) {
-          throw new Error(`Unsupported attr(${key}) in ${table} creating`);
+          throw new Error(`Unsupported attr(${type}) in ${table} creating`);
         }
-        attrSchema.create(product, value);
+        attrSchema.create(toSave, value);
       }
     });
-    product.set('keywords', generateKeywords(attrs, type));
-    const savedProduct = await product.save(null, {
+    toSave.set('keywords', generateKeywords(attrs, type));
+    const saved = await toSave.save(null, {
       fetchWhenSave: true,
       sessionToken,
     });
-    response.success(savedProduct);
+    response.success(saved);
   } catch (err) {
     console.error(err);
     response.error(err);
   }
 });
 
-AV.Cloud.define('updateProduct', async (request, response) => {
+AV.Cloud.define('updatePublish', async (request, response) => {
   try {
     const { sessionToken, currentUser,  params: { type, objectId, ...attrs } } = request;
     if (!objectId) {
       throw new Error('objectId is empty');
     }
-    const schema = productSchemas[type];
+    const schema = publishesSchemas[type];
     const { table, attributes } = schema;
     const toSave = AV.Object.createWithoutData(table, objectId);
-    if (attrs.status !== statusValues.unverified.value) { // new product can be only unavailable or unverified (未上架/已上架)
+    if (attrs.status !== statusValues.unverified.value) { // new publish can be only unavailable or unverified (未上架/已上架)
       attrs.status = statusValues.unavailable.value;
     }
-    _map(attrs, (value, key) => {
+    _map(attrs, (value, type) => {
       if (!_isUndefined(value)) {
-        const attrSchema = attributes[key];
+        const attrSchema = attributes[type];
         if (!attrSchema || !attrSchema.update) {
-          throw new Error(`Unsupported attr(${key}) in ${table} updating`);
+          throw new Error(`Unsupported attr(${type}) in ${table} updating`);
         }
         attrSchema.update(toSave, value);
       }
     });
     toSave.set('keywords', generateKeywords(attrs, type));
-    const savedProduct = await toSave.save(null, {
+    const savedPublish = await toSave.save(null, {
       fetchWhenSave: true,
       sessionToken,
     });
-    response.success(savedProduct);
+    response.success(savedPublish);
   } catch (err) {
     console.error(err);
     response.error(err);
@@ -74,11 +76,11 @@ const createQuery = (schema, { sort, page, pageSize, ...params }) => {
   const { table, attributes } = schema;
   const query = new AV.Query(table)
     .include(_union(..._map(attributes, (attr) => attr.include)));
-  _map(params, (value, key) => {
+  _map(params, (value, type) => {
     if (!_isUndefined(value)) {
-      const attrSchema = attributes[key];
+      const attrSchema = attributes[type];
       if (!attrSchema || !attrSchema.search) {
-        throw new Error(`Unsupported attr(${key}) in ${table} searching`);
+        throw new Error(`Unsupported attr(${type}) in ${table} searching`);
       }
       attrSchema.search(query, value);
     }
@@ -98,11 +100,11 @@ const createQuery = (schema, { sort, page, pageSize, ...params }) => {
   return query;
 };
 
-AV.Cloud.define('pageProducts', async (request, response) => {
+AV.Cloud.define('pagePublishes', async (request, response) => {
   try {
     const { sessionToken, currentUser,  params } = request;
     const { type, sort, page, pageSize, owner, ...otherParams } = params;
-    const schema = productSchemas[type];
+    const schema = publishesSchemas[type];
     if (!schema) {
       throw new Error(`Unknown type ${type}`);
     }
@@ -118,13 +120,13 @@ AV.Cloud.define('pageProducts', async (request, response) => {
       }
     } else {
       if (params.status) {
-        console.warn('You shall not set status as query param when not querying products of yourself');
+        console.warn('You shall not set status as query param when not querying of yourself');
       }
       status = [statusValues.unverified.value, statusValues.verified.value];
     }
     const query = createQuery(schema, { sort, page, pageSize, ...otherParams, owner, status });
     const countQuery = createQuery(schema, { ...otherParams, owner, status });
-    const [count, products] = await Promise.all([countQuery.count({ sessionToken }), query.find({ sessionToken })]);
+    const [count, publishes] = await Promise.all([countQuery.count({ sessionToken }), query.find({ sessionToken })]);
 
     const result = {
       total: count,
@@ -133,7 +135,7 @@ AV.Cloud.define('pageProducts', async (request, response) => {
       pageSize,
       first: page === 1,
       last: count <= page * pageSize,
-      results: products,
+      results: publishes,
     }
     response.success(result);
   } catch (err) {
@@ -146,71 +148,71 @@ const changeStatus = async (request, response, newStatus, statusCheck) => {
   try {
     const {sessionToken, params} = request;
     const {objectId, type} = params;
-    const schema = productSchemas[type];
+    const schema = publishesSchemas[type];
     if (!schema) {
       throw new Error(`Unknown type ${type}`);
     }
     const {table} = schema;
-    const product = await AV.Object.createWithoutData(table, objectId).fetch({sessionToken});
-    const status = product.get('status');
+    const publish = await AV.Object.createWithoutData(table, objectId).fetch({sessionToken});
+    const status = publish.get('status');
     if (statusCheck) {
       statusCheck(status, newStatus);
     }
-    product.set('status', newStatus);
-    await product.save({ sessionToken });
-    response.success({ updatedAt: product.get('updatedAt').getTime(), status: newStatus });
+    publish.set('status', newStatus);
+    await publish.save({ sessionToken });
+    response.success({ updatedAt: publish.get('updatedAt').getTime(), status: newStatus });
   } catch (err) {
     console.error(err);
     response.error(err);
   }
 };
 
-AV.Cloud.define('enableProduct', async (request, response) => await changeStatus(
+AV.Cloud.define('enablePublish', async (request, response) => await changeStatus(
   request,
   response,
   statusValues.unverified.value,
   (status) => {
     if (status !== statusValues.unavailable.value) {
-      throw new Error(`You can only enable unavailable products. current status: ${status}`);
+      throw new Error(`You can only enable unavailable publishs. current status: ${status}`);
     }
   }
 ));
 
-AV.Cloud.define('disableProduct', async (request, response) => await changeStatus(
+AV.Cloud.define('disablePublish', async (request, response) => await changeStatus(
   request,
   response,
   statusValues.unavailable.value,
   (status) => {
     if (status !== statusValues.unverified.value && status !== statusValues.verified.value) {
-      throw new Error(`You can only disable unverified or verified products. current status: ${status}`);
+      throw new Error(`You can only disable unverified or verified publishs. current status: ${status}`);
     }
   }
 ));
 
-AV.Cloud.define('removeProduct', async (request, response) => await changeStatus(
+AV.Cloud.define('removePublish', async (request, response) => await changeStatus(
   request,
   response,
   statusValues.removed.value,
 ));
 
-AV.Cloud.define('verifyProduct', async (request, response) => await changeStatus(
+AV.Cloud.define('verifyPublish', async (request, response) => await changeStatus(
   request,
   response,
   statusValues.verified.value,
   (status) => {
     if (status !== statusValues.verified.value) {
-      throw new Error(`You can only verify unverified products. current status: ${status}`);
+      throw new Error(`You can only verify unverified publishs. current status: ${status}`);
     }
   }
 ));
 
-AV.Cloud.define('rejectProduct', async (request, response) => await changeStatus(
+AV.Cloud.define('rejectPublish', async (request, response) => await changeStatus(
   request,
   response,
   statusValues.verified.value,
   (status) => {
     if (status !== statusValues.unverified.value || status !== statusValues.verified.value) {
-      throw new Error(`You can only reject unverified or verified products. current status: ${status}`);
+      throw new Error(`You can only reject unverified or verified publishs. current status: ${status}`);
     }
   }
 ));

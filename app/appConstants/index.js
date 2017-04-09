@@ -124,3 +124,7 @@ export const districtLevels = {
   district: { value: 'district', title: '区县内', child: 'street' },
   custom: { value: 'custom', title: '自定义' },
 };
+
+export icons from './icons';
+
+export publishTypeInfos, { types as publishTypes } from './publishTypes';

@@ -1,12 +1,13 @@
 import _isEmpty from 'lodash/isEmpty';
 import _reduce from 'lodash/reduce';
 import _uniq from 'lodash/uniq';
-import { productTypes, statusValues } from '../appConstants';
+import { publishTypes, statusValues } from '../appConstants';
 import { briefAddress } from './displayUtils';
+// const debug = require('debug')('fonongweb:utils:publishUtils');
 
-const categoryToKeywords = (category) => (!category || !category.objectId) ? [] : [category.objectId, category.name];
+const categoryToKeywords = (category) => (!category || !category.objectId) ? [] : [category.objectId];
 
-const speciesToKeywords = (species) => (!species || !species.objectId) ? [] : [species.objectId, species.name];
+const speciesToKeywords = (species) => (!species || !species.objectId) ? [] : [species.objectId];
 
 const nameToKeywords = (name) => name ? [name] : [];
 
@@ -18,11 +19,11 @@ const capacityToKeywords = (capacity) => capacity == null ? [] : [capacity.toStr
 
 const rangeToKeywords = (range) => _isEmpty(range) ? [] : range;
 
-export const generateKeywords = (product, type) => {
+export const generateKeywords = (publish, type) => {
   const keywords = [];
   switch (type) {
-    case productTypes.supply: {
-      const { category, species, name, specs, location } = product;
+    case publishTypes.supply: {
+      const { category, species, name, specs, location } = publish;
       keywords.push(...categoryToKeywords(category));
       keywords.push(...speciesToKeywords(species));
       keywords.push(...nameToKeywords(name));
@@ -30,22 +31,38 @@ export const generateKeywords = (product, type) => {
       keywords.push(...specsToKeywords(specs));
       break;
     }
-    case productTypes.logistics: {
-      const { capacity, name, range, location } = product;
+    case publishTypes.logistics: {
+      const { capacity, name, range, location } = publish;
       keywords.push(...capacityToKeywords(capacity));
       keywords.push(...nameToKeywords(name));
       keywords.push(...locationToKeywords(location));
       keywords.push(...rangeToKeywords(range));
       break;
     }
-    case productTypes.trip: {
-      const { name, location } = product;
+    case publishTypes.trip: {
+      const { name, location } = publish;
       keywords.push(...nameToKeywords(name));
       keywords.push(...locationToKeywords(location));
       break;
     }
-    case productTypes.shop: {
-      const { category, species, name, specs } = product;
+    case publishTypes.shop: {
+      const { category, species, name, specs } = publish;
+      keywords.push(...categoryToKeywords(category));
+      keywords.push(...speciesToKeywords(species));
+      keywords.push(...nameToKeywords(name));
+      keywords.push(...specsToKeywords(specs));
+      break;
+    }
+    case publishTypes.inquiry: {
+      const { category, species, name, specs } = publish;
+      keywords.push(...categoryToKeywords(category));
+      keywords.push(...speciesToKeywords(species));
+      keywords.push(...nameToKeywords(name));
+      keywords.push(...locationToKeywords(specs));
+      break;
+    }
+    case publishTypes.flashSale: {
+      const { category, species, name, specs } = publish;
       keywords.push(...categoryToKeywords(category));
       keywords.push(...speciesToKeywords(species));
       keywords.push(...nameToKeywords(name));
@@ -53,7 +70,7 @@ export const generateKeywords = (product, type) => {
       break;
     }
     default: {
-      const { category, species, name, specs, range, capacity, location } = product;
+      const { category, species, name, specs, range, capacity, location } = publish;
       keywords.push(...categoryToKeywords(category));
       keywords.push(...speciesToKeywords(species));
       keywords.push(...capacityToKeywords(capacity));
@@ -80,11 +97,11 @@ const capacityToDisplayName = (capacity) => capacity == null ? [] : [capacity.to
 
 const rangeToDisplayName = (range) => _isEmpty(range) ? [] : range;
 
-export const generateDisplayName = (product, type) => {
+export const generateDisplayName = (publish, type) => {
   const keywords = [];
   switch (type) {
-    case productTypes.supply: {
-      const { category, species, name, specs, location } = product;
+    case publishTypes.supply: {
+      const { category, species, name, specs, location } = publish;
       keywords.push(...categoryToDisplayName(category));
       keywords.push(...speciesToDisplayName(species));
       keywords.push(...nameToDisplayName(name));
@@ -92,22 +109,38 @@ export const generateDisplayName = (product, type) => {
       keywords.push(...specsToDisplayName(specs));
       break;
     }
-    case productTypes.logistics: {
-      const { capacity, name, range, location } = product;
+    case publishTypes.logistics: {
+      const { capacity, name, range, location } = publish;
       keywords.push(...capacityToDisplayName(capacity));
       keywords.push(...nameToDisplayName(name));
       keywords.push(...locationToDisplayName(location));
       keywords.push(...rangeToDisplayName(range));
       break;
     }
-    case productTypes.trip: {
-      const { name, location } = product;
+    case publishTypes.trip: {
+      const { name, location } = publish;
       keywords.push(...nameToDisplayName(name));
       keywords.push(...locationToDisplayName(location));
       break;
     }
-    case productTypes.shop: {
-      const { category, species, name, specs } = product;
+    case publishTypes.shop: {
+      const { category, species, name, specs } = publish;
+      keywords.push(...categoryToDisplayName(category));
+      keywords.push(...speciesToDisplayName(species));
+      keywords.push(...nameToDisplayName(name));
+      keywords.push(...specsToDisplayName(specs));
+      break;
+    }
+    case publishTypes.inquiry: {
+      const { category, species, name, specs } = publish;
+      keywords.push(...categoryToDisplayName(category));
+      keywords.push(...speciesToDisplayName(species));
+      keywords.push(...nameToDisplayName(name));
+      keywords.push(...locationToDisplayName(specs));
+      break;
+    }
+    case publishTypes.flashSale: {
+      const { category, species, name, specs } = publish;
       keywords.push(...categoryToDisplayName(category));
       keywords.push(...speciesToDisplayName(species));
       keywords.push(...nameToDisplayName(name));
@@ -115,7 +148,7 @@ export const generateDisplayName = (product, type) => {
       break;
     }
     default: {
-      const { category, species, name, specs, range, capacity, location } = product;
+      const { category, species, name, specs, range, capacity, location } = publish;
       keywords.push(...categoryToDisplayName(category));
       keywords.push(...speciesToDisplayName(species));
       keywords.push(...capacityToDisplayName(capacity));
@@ -127,6 +160,8 @@ export const generateDisplayName = (product, type) => {
   }
   return keywords.join(' ');
 };
+
+
 export const canEnable = ({ status }) => {
   switch (status) {
     case statusValues.unavailable.value:
