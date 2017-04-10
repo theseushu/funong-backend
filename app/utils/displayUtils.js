@@ -56,45 +56,22 @@ export const formatDeliveryFee = (minimum, deliveryFee) => {
   return `${minimum}元起送，运费${deliveryFee}`;
 };
 
-const miniSecsInHour = 3600 * 1000;
-const miniSecsInDay = miniSecsInHour * 24;
-const miniSecsInWeek = miniSecsInDay * 7;
-const miniSecsInMonth = miniSecsInDay * 30;
-const miniSecsInYear = miniSecsInDay * 365;
-export const humanizeTime = (time) => {
-  const now = new Date().getTime();
-  const period = now - time;
-  if (period < miniSecsInDay) {
-    const hours = Math.floor((period) / miniSecsInHour);
-    if (hours <= 0) {
-      return '刚刚';
-    }
-    return `${hours}小时前`;
-  } else if (period < miniSecsInWeek) {
-    const days = Math.floor((now - time) / miniSecsInDay);
-    if (days <= 0) {
-      return '今天';
-    }
-    return `${days}天前`;
-  } else if (period < miniSecsInMonth) {
-    const weeks = Math.floor((now - time) / miniSecsInWeek);
-    if (weeks <= 0) {
-      return '本周';
-    }
-    return `${weeks}周前`;
-  } else if (period < miniSecsInYear) {
-    const months = Math.floor((now - time) / miniSecsInMonth);
-    if (months <= 0) {
-      return '本月';
-    }
-    return `${months}月前`;
+export const formatStartAndEndTime = (startTime, endTime) => {
+  const start = moment(startTime);
+  const end = moment(endTime);
+  if (end.isBefore()) {
+    return '已结束';
+  } else if (start.isBefore()) {
+    return `${end.fromNow()}结束`;
   }
-  const years = Math.floor((now - time) / miniSecsInYear);
-  if (years <= 0) {
-    return '今年';
-  }
-  return `${years}年前`;
+  return `${start.fromNow()}开始`;
 };
+
+export const humanizeTime = (time) => {
+  const m = moment(time);
+  return m.isBefore() ? m.fromNow() : m.toNow();
+};
+
 
 // 计算距离，参数分别为第一点的纬度，经度；第二点的纬度，经度
 export function humanizeDistance(distance) {

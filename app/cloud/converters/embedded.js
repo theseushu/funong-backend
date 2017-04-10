@@ -33,3 +33,12 @@ export const embeddedProductToJSON = (product) => {
   const { objectId } = product.toJSON();
   return { objectId };
 };
+
+
+export const originalProductToJSON = (product) => {
+  if (!product) {
+    return undefined;
+  }
+  const { objectId } = product.toJSON();
+  return _omitBy({ objectId }, _isUndefined);
+};

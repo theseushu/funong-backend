@@ -103,20 +103,20 @@ const createQuery = (schema, { sort, page, pageSize, ...params }) => {
 AV.Cloud.define('pagePublishes', async (request, response) => {
   try {
     const { sessionToken, currentUser,  params } = request;
-    const { type, sort, page, pageSize, owner, ...otherParams } = params;
+    const { type, sort, page, pageSize, owner, shop, ...otherParams } = params;
     const schema = publishesSchemas[type];
     if (!schema) {
       throw new Error(`Unknown type ${type}`);
     }
     let status = [];
-    if (owner && owner.objectId === currentUser.id) {
+    if (owner && owner.objectId === currentUser.id || (shop && shop.owner.objectId === currentUser.id)) {
       if (params.status) {
         status = params.status.filter((value) => value !== statusValues.unverified.value && value !== statusValues.verified.value && value !== statusValues.rejected.value);
         if (params.status.length !== status.length) {
           console.warn(`You've set illegal status in query. available values are [${statusValues.unverified.value}, ${statusValues.verified.value}, ${statusValues.rejected.value}]`);
         }
       } else {
-        status = [statusValues.unverified.value, statusValues.verified.value, statusValues.rejected.value];
+        status = [statusValues.unavailable.value, statusValues.unverified.value, statusValues.verified.value, statusValues.rejected.value];
       }
     } else {
       if (params.status) {
@@ -124,8 +124,8 @@ AV.Cloud.define('pagePublishes', async (request, response) => {
       }
       status = [statusValues.unverified.value, statusValues.verified.value];
     }
-    const query = createQuery(schema, { sort, page, pageSize, ...otherParams, owner, status });
-    const countQuery = createQuery(schema, { ...otherParams, owner, status });
+    const query = createQuery(schema, { sort, page, pageSize, ...otherParams, owner, shop, status });
+    const countQuery = createQuery(schema, { ...otherParams, owner, shop, status });
     const [count, publishes] = await Promise.all([countQuery.count({ sessionToken }), query.find({ sessionToken })]);
 
     const result = {
