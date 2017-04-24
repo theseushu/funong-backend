@@ -1,5 +1,5 @@
 import AV from 'leanengine';
-import { calculateOrder } from '../utils/orderUtils';
+import { calculateOrder } from 'funong-common/lib/utils/orderUtils';
 
 class Order extends AV.Object {}
 AV.Object.register(Order);
@@ -13,7 +13,7 @@ AV.Cloud.define('createOrders', async (request, response) => {
 
       const { type, items, address, user, shop, agent, fees, message, services, amount, can } = order;
       const avOrder = new Order();
-      var acl = new AV.ACL();
+      const acl = new AV.ACL();
       acl.setReadAccess(currentUser, true);
       acl.setWriteAccess(currentUser, true);
       avOrder.set('type', type);
@@ -67,7 +67,7 @@ AV.Cloud.define('commitOrder', async (request, response) => {
       throw new Error('The order cannot be committed');
     }
     const attrs = {};
-    if(can.requirements) {
+    if (can.requirements) {
       attrs.message = order.message;
       attrs.services = order.services;
     }

@@ -1,7 +1,7 @@
 import AV from 'leanengine';
 
 const createQuery = ({ inquiry, owner, sort, page, pageSize }) => {
-  let query = new AV.Query('Bid')
+  const query = new AV.Query('Bid')
     .include(['product', 'product.thumbnail', 'owner', 'owner.avatar', 'inquiry', 'inquiry.owner', 'inquiry.category', 'inquiry.species']);
   if (inquiry) {
     query.equalTo('inquiry', AV.Object.createWithoutData('Inquiry', inquiry.objectId));
@@ -44,9 +44,9 @@ AV.Cloud.define('pageBids', async (request, response) => {
         results: bids,
       });
     } else {
-      const query = createQuery({inquiry, owner: mine ? { objectId: currentUser.id } : null, sort, page, pageSize});
-      const countQuery = createQuery({inquiry, owner: mine ? { objectId: currentUser.id } : null, sort});
-      const [count, bids] = await Promise.all([countQuery.count({sessionToken}), query.find({sessionToken})]);
+      const query = createQuery({ inquiry, owner: mine ? { objectId: currentUser.id } : null, sort, page, pageSize });
+      const countQuery = createQuery({ inquiry, owner: mine ? { objectId: currentUser.id } : null, sort });
+      const [count, bids] = await Promise.all([countQuery.count({ sessionToken }), query.find({ sessionToken })]);
       const result = {
         total: count,
         totalPages: Math.ceil(count / pageSize),

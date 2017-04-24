@@ -1,35 +1,34 @@
-import _find from 'lodash/find';
 import AV from 'leanengine';
-import { statusValues, certTypes, badges } from '../appConstants';
+import { statusValues, certTypes, badges } from 'funong-common/lib/appConstants';
 
 /**
  * 一个简单的云代码方法
  */
 AV.Cloud.define('hello', async (request, response) => {
-  await new Promise((resolve) => setTimeout(() => {
-    response.success({ hello: ' world'});
+  await new Promise(() => setTimeout(() => {
+    response.success({ hello: ' world' });
   }, 1000));
 });
 
 // users&roles
-AV.Cloud.define('fetchUserRoles', function(request, response) {
+AV.Cloud.define('fetchUserRoles', (request, response) => {
   const { currentUser } = request;
-  var targetUser = AV.Object.createWithoutData('_User', currentUser.id);
-  var query = new AV.Query('_Role');
+  const targetUser = AV.Object.createWithoutData('_User', currentUser.id);
+  const query = new AV.Query('_Role');
   query.equalTo('users', targetUser);
   query.find().then((roles) => {
     response.success(roles);
   }).catch((err) => {
     console.error(err);
     response.error(err);
-  })
+  });
 });
 
 AV.Cloud.define('setUserToRole', (request, response) => {
-  const { currentUser, params } = request;
+  const { params } = request;
   const { user, role } = params;
   const avRole = AV.Object.createWithoutData('_Role', role.objectId);
-  avRole.relation('users').add(AV.Object.createWithoutData('_User', user.user.objectId))
+  avRole.relation('users').add(AV.Object.createWithoutData('_User', user.user.objectId));
   avRole.save(null, { useMasterKey: true }).then(() => {
     const avProfile = AV.Object.createWithoutData('Profile', user.objectId);
     avProfile.addUnique('roles', role.name);
@@ -40,14 +39,14 @@ AV.Cloud.define('setUserToRole', (request, response) => {
     });
   }).catch((err) => {
     response.error(err);
-  })
+  });
 });
 
 AV.Cloud.define('setUserToRole', (request, response) => {
-  const { currentUser, params } = request;
+  const { params } = request;
   const { user, role } = params;
   const avRole = AV.Object.createWithoutData('_Role', role.objectId);
-  avRole.relation('users').add(AV.Object.createWithoutData('_User', user.user.objectId))
+  avRole.relation('users').add(AV.Object.createWithoutData('_User', user.user.objectId));
   avRole.save(null, { useMasterKey: true }).then(() => {
     const avProfile = AV.Object.createWithoutData('Profile', user.objectId);
     avProfile.addUnique('roles', role.name);
@@ -58,14 +57,14 @@ AV.Cloud.define('setUserToRole', (request, response) => {
     });
   }).catch((err) => {
     response.error(err);
-  })
+  });
 });
 
 AV.Cloud.define('removeUserFromRole', (request, response) => {
-  const { currentUser, params } = request;
+  const { params } = request;
   const { user, role } = params;
   const avRole = AV.Object.createWithoutData('_Role', role.objectId);
-  avRole.relation('users').remove(AV.Object.createWithoutData('_User', user.user.objectId))
+  avRole.relation('users').remove(AV.Object.createWithoutData('_User', user.user.objectId));
   avRole.save(null, { useMasterKey: true }).then(() => {
     const avProfile = AV.Object.createWithoutData('Profile', user.objectId);
     avProfile.remove('roles', role.name);
@@ -76,12 +75,12 @@ AV.Cloud.define('removeUserFromRole', (request, response) => {
     });
   }).catch((err) => {
     response.error(err);
-  })
+  });
 });
 
 // certs
 AV.Cloud.define('searchCerts', (request, response) => {
-  const { currentUser, params } = request;
+  const { params } = request;
   const { status, skip, limit } = params;
 
   const query = new AV.Query('Cert')
@@ -99,12 +98,12 @@ AV.Cloud.define('searchCerts', (request, response) => {
     .then((certs) => {
       response.success(certs);
     }).catch((err) => {
-    response.error(err);
-  });
+      response.error(err);
+    });
 });
 // certs
 AV.Cloud.define('certs.changeStatus', (request, response) => {
-  const { currentUser, params: { objectId, status } } = request;
+  const { params: { objectId, status } } = request;
   AV.Query.doCloudQuery('update Cert set status=? where objectId=?', [status, objectId], {
     useMasterKey: true,
   }).then(() => {
@@ -116,11 +115,11 @@ AV.Cloud.define('certs.changeStatus', (request, response) => {
 
 // certs
 AV.Cloud.define('certs.verify', (request, response) => {
-  const { currentUser, params: { objectId } } = request;
-  const cert = AV.Object.createWithoutData('Cert', objectId);
-  cert.fetch(null, { useMasterKey: true }).then(cert => {
-    cert.set('status', statusValues.verified.value);
-    cert.save(null, { useMasterKey: true, fetchWhenSave: true }).then(cert => {
+  const { params: { objectId } } = request;
+  const avCert = AV.Object.createWithoutData('Cert', objectId);
+  avCert.fetch(null, { useMasterKey: true }).then((c) => {
+    c.set('status', statusValues.verified.value);
+    c.save(null, { useMasterKey: true, fetchWhenSave: true }).then((cert) => {
       const owner = cert.get('owner');
       let badge;
       switch (cert.get('type')) {
@@ -149,19 +148,19 @@ AV.Cloud.define('certs.verify', (request, response) => {
       }
     }).catch((err) => {
       response.error(err);
-    })
+    });
   }).catch((err) => {
     response.error(err);
-  })
+  });
 });
 
 // certs
 AV.Cloud.define('certs.reject', (request, response) => {
-  const { currentUser, params: { objectId } } = request;
-  const cert = AV.Object.createWithoutData('Cert', objectId);
-  cert.fetch(null, { useMasterKey: true }).then(cert => {
-    cert.set('status', statusValues.rejected.value);
-    cert.save(null, { useMasterKey: true, fetchWhenSave: true }).then(cert => {
+  const { params: { objectId } } = request;
+  const avCert = AV.Object.createWithoutData('Cert', objectId);
+  avCert.fetch(null, { useMasterKey: true }).then((c) => {
+    c.set('status', statusValues.rejected.value);
+    c.save(null, { useMasterKey: true, fetchWhenSave: true }).then((cert) => {
       const owner = cert.get('owner');
       let badge;
       switch (cert.get('type')) {
@@ -190,8 +189,8 @@ AV.Cloud.define('certs.reject', (request, response) => {
       }
     }).catch((err) => {
       response.error(err);
-    })
+    });
   }).catch((err) => {
     response.error(err);
-  })
+  });
 });

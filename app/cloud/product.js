@@ -2,13 +2,13 @@ import _union from 'lodash/union';
 import _isUndefined from 'lodash/isUndefined';
 import _map from 'lodash/map';
 import AV from 'leanengine';
-import { statusValues } from '../appConstants';
+import { statusValues } from 'funong-common/lib/appConstants';
+import { generateKeywords } from 'funong-common/lib/utils/publishUtils';
 import { products as productSchemas } from './shemas';
-import { generateKeywords } from '../utils/productUtils';
 
 AV.Cloud.define('createProduct', async (request, response) => {
   try {
-    const { sessionToken, currentUser,  params: { type, ...attrs } } = request;
+    const { sessionToken, currentUser, params: { type, ...attrs } } = request;
     const schema = productSchemas[type];
     const { table, attributes } = schema;
     const product = new schema.Class();
@@ -39,7 +39,7 @@ AV.Cloud.define('createProduct', async (request, response) => {
 
 AV.Cloud.define('updateProduct', async (request, response) => {
   try {
-    const { sessionToken, currentUser,  params: { type, objectId, ...attrs } } = request;
+    const { sessionToken, params: { type, objectId, ...attrs } } = request;
     if (!objectId) {
       throw new Error('objectId is empty');
     }
@@ -100,7 +100,7 @@ const createQuery = (schema, { sort, page, pageSize, ...params }) => {
 
 AV.Cloud.define('pageProducts', async (request, response) => {
   try {
-    const { sessionToken, currentUser,  params } = request;
+    const { sessionToken, currentUser, params } = request;
     const { type, sort, page, pageSize, owner, ...otherParams } = params;
     const schema = productSchemas[type];
     if (!schema) {
@@ -134,7 +134,7 @@ AV.Cloud.define('pageProducts', async (request, response) => {
       first: page === 1,
       last: count <= page * pageSize,
       results: products,
-    }
+    };
     response.success(result);
   } catch (err) {
     console.error(err);
@@ -144,14 +144,14 @@ AV.Cloud.define('pageProducts', async (request, response) => {
 
 const changeStatus = async (request, response, newStatus, statusCheck) => {
   try {
-    const {sessionToken, params} = request;
-    const {objectId, type} = params;
+    const { sessionToken, params } = request;
+    const { objectId, type } = params;
     const schema = productSchemas[type];
     if (!schema) {
       throw new Error(`Unknown type ${type}`);
     }
-    const {table} = schema;
-    const product = await AV.Object.createWithoutData(table, objectId).fetch({sessionToken});
+    const { table } = schema;
+    const product = await AV.Object.createWithoutData(table, objectId).fetch({ sessionToken });
     const status = product.get('status');
     if (statusCheck) {
       statusCheck(status, newStatus);

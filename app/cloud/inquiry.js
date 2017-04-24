@@ -1,7 +1,7 @@
 import AV from 'leanengine';
 
 const createQuery = ({ sort, page, pageSize, category, species, provinces, status, owner }) => {
-  let query = new AV.Query('Inquiry')
+  const query = new AV.Query('Inquiry')
     .include(['category', 'species', 'owner', 'owner.avatar']);
   if (category) {
     query.equalTo('category', AV.Object.createWithoutData('Category', category.objectId));
@@ -48,7 +48,7 @@ AV.Cloud.define('pageInquiries', async (request, response) => {
       first: page === 1,
       last: count <= page * pageSize,
       results: inquiries,
-    }
+    };
     response.success(result);
   } catch (err) {
     console.error(err);

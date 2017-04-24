@@ -2,13 +2,13 @@ import _union from 'lodash/union';
 import _isUndefined from 'lodash/isUndefined';
 import _map from 'lodash/map';
 import AV from 'leanengine';
-import { statusValues } from '../appConstants';
+import { generateKeywords } from 'funong-common/lib/utils/publishUtils';
+import { statusValues } from 'funong-common/lib/appConstants';
 import { publishes as publishesSchemas } from './shemas';
-import { generateKeywords } from '../utils/productUtils';
 
 AV.Cloud.define('createPublish', async (request, response) => {
   try {
-    const { sessionToken, currentUser,  params: { type, ...attrs } } = request;
+    const { sessionToken, currentUser, params: { type, ...attrs } } = request;
     const schema = publishesSchemas[type];
     const { table, attributes } = schema;
     const toSave = new schema.Class();
@@ -16,13 +16,13 @@ AV.Cloud.define('createPublish', async (request, response) => {
       attrs.status = statusValues.unavailable.value;
     }
     if (attributes.owner && attributes.owner.create) {
-      attrs.owner = {objectId: currentUser.id};
+      attrs.owner = { objectId: currentUser.id };
     }
-    _map(attrs, (value, type) => {
+    _map(attrs, (value, attr) => {
       if (!_isUndefined(value)) {
-        const attrSchema = attributes[type];
+        const attrSchema = attributes[attr];
         if (!attrSchema || !attrSchema.create) {
-          throw new Error(`Unsupported attr(${type}) in ${table} creating`);
+          throw new Error(`Unsupported attr(${attr}) in ${table} creating`);
         }
         attrSchema.create(toSave, value);
       }
@@ -41,7 +41,7 @@ AV.Cloud.define('createPublish', async (request, response) => {
 
 AV.Cloud.define('updatePublish', async (request, response) => {
   try {
-    const { sessionToken, currentUser,  params: { type, objectId, ...attrs } } = request;
+    const { sessionToken, params: { type, objectId, ...attrs } } = request;
     if (!objectId) {
       throw new Error('objectId is empty');
     }
@@ -51,11 +51,11 @@ AV.Cloud.define('updatePublish', async (request, response) => {
     if (attrs.status !== statusValues.unverified.value) { // new publish can be only unavailable or unverified (未上架/已上架)
       attrs.status = statusValues.unavailable.value;
     }
-    _map(attrs, (value, type) => {
+    _map(attrs, (value, attr) => {
       if (!_isUndefined(value)) {
-        const attrSchema = attributes[type];
+        const attrSchema = attributes[attr];
         if (!attrSchema || !attrSchema.update) {
-          throw new Error(`Unsupported attr(${type}) in ${table} updating`);
+          throw new Error(`Unsupported attr(${attr}) in ${table} updating`);
         }
         attrSchema.update(toSave, value);
       }
@@ -102,14 +102,14 @@ const createQuery = (schema, { sort, page, pageSize, ...params }) => {
 
 AV.Cloud.define('pagePublishes', async (request, response) => {
   try {
-    const { sessionToken, currentUser,  params } = request;
+    const { sessionToken, currentUser, params } = request;
     const { type, sort, page, pageSize, owner, shop, ...otherParams } = params;
     const schema = publishesSchemas[type];
     if (!schema) {
       throw new Error(`Unknown type ${type}`);
     }
     let status = [];
-    if (owner && owner.objectId === currentUser.id || (shop && shop.owner.objectId === currentUser.id)) {
+    if ((owner && owner.objectId === currentUser.id) || (shop && shop.owner.objectId === currentUser.id)) {
       if (params.status) {
         status = params.status.filter((value) => value !== statusValues.unverified.value && value !== statusValues.verified.value && value !== statusValues.rejected.value);
         if (params.status.length !== status.length) {
@@ -136,7 +136,7 @@ AV.Cloud.define('pagePublishes', async (request, response) => {
       first: page === 1,
       last: count <= page * pageSize,
       results: publishes,
-    }
+    };
     response.success(result);
   } catch (err) {
     console.error(err);
@@ -146,14 +146,14 @@ AV.Cloud.define('pagePublishes', async (request, response) => {
 
 const changeStatus = async (request, response, newStatus, statusCheck) => {
   try {
-    const {sessionToken, params} = request;
-    const {objectId, type} = params;
+    const { sessionToken, params } = request;
+    const { objectId, type } = params;
     const schema = publishesSchemas[type];
     if (!schema) {
       throw new Error(`Unknown type ${type}`);
     }
-    const {table} = schema;
-    const publish = await AV.Object.createWithoutData(table, objectId).fetch({sessionToken});
+    const { table } = schema;
+    const publish = await AV.Object.createWithoutData(table, objectId).fetch({ sessionToken });
     const status = publish.get('status');
     if (statusCheck) {
       statusCheck(status, newStatus);
