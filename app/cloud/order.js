@@ -11,7 +11,7 @@ AV.Cloud.define('createOrders', async (request, response) => {
     const ordersToSave = orders.map((originOrder) => {
       const order = calculateOrder(originOrder, { objectId: currentUser.id });
 
-      const { type, items, address, user, shop, agent, fees, message, services, amount, can } = order;
+      const { type, items, address, user, shop, agent, fees, message, services, amount, can, expireAt } = order;
       const avOrder = new Order();
       const acl = new AV.ACL();
       acl.setReadAccess(currentUser, true);
@@ -37,6 +37,9 @@ AV.Cloud.define('createOrders', async (request, response) => {
       avOrder.set('message', message);
       avOrder.set('services', services);
       avOrder.set('amount', amount);
+      if (expireAt) {
+        avOrder.set('expireAt', new Date(expireAt));
+      }
 
       avOrder.set('status', can.commit.to);
       avOrder.setACL(acl);
