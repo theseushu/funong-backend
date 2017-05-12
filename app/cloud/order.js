@@ -1,5 +1,11 @@
+import sign from 'crypto';
+import uuid from 'node-uuid';
 import AV from 'leanengine';
 import { calculateOrder } from 'funong-common/lib/utils/orderUtils';
+import { statusValues } from 'funong-common/lib/appConstants';
+import orderToJSON from 'funong-common/lib/converters/order';
+const BEECLUOD_APPID = '5cf8154e-b7e6-4443-a421-f922ca52a0fb';
+const BEECLOUD_SECRET = '81c9fba9-fe1f-49ee-a4ec-8efe8dc5e4d0';
 
 class Order extends AV.Object {}
 AV.Object.register(Order);
@@ -89,6 +95,53 @@ AV.Cloud.define('commitOrder', async (request, response) => {
       ],
     }, { sessionToken });
     response.success(result);
+  } catch (err) {
+    console.error(err);
+    response.error(err);
+  }
+});
+
+AV.Cloud.define('generateBeecloudBill', async (request, response) => {
+  try {
+    const { sessionToken, currentUser, params } = request;
+    // const orderId = params.objectId;
+    // if (!orderId || !currentUser) {
+    //   throw new Error('');
+    // }
+    // const avOrder = await AV.Object.createWithoutData('Order', orderId).fetch(null, { sessionToken });
+    // const order = calculateOrder(orderToJSON(avOrder), { objectId: currentUser.id });
+    // if (order.owner.objectId !== currentUser.id || order.status !== statusValues.billed.value) {
+    //   throw new Error('');
+    // }
+    // const calculated = calculateOrder(orderToJSON(avOrder), { objectId: currentUser.id });
+    // const amount = calculated.amount.toString();
+    // const title = '1111';
+    //
+    // const outTradeNo = uuid.v4().replace(/-/g, '');
+    //
+    // const data = BEECLUOD_APPID + title + amount + outTradeNo + BEECLOUD_SECRET;
+    // console.log(data);
+    // const signStr = sign.createHash('md5').update(data, 'utf8').digest('hex');
+    //
+    // console.log(JSON.stringify({
+    //   title, amount, outTradeNo, signStr,
+    // }));
+    const appid = BEECLUOD_APPID;
+    const secret = BEECLOUD_SECRET;
+    const title = '中文 node.js water';
+    const amount = '1';
+
+    let outTradeNo = uuid.v4();
+    outTradeNo = outTradeNo.replace(/-/g, '');
+
+    const data = appid + title + amount + outTradeNo + secret;
+    const signStr = sign.createHash('md5').update(data, 'utf8').digest('hex');
+    response.success({
+      title,
+      amount,
+      outTradeNo,
+      sign: signStr,
+    });
   } catch (err) {
     console.error(err);
     response.error(err);
