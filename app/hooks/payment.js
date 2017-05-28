@@ -51,6 +51,7 @@ export default (app) => {
   app.post('/hooks/chargeSucceed', async (req, res) => {
     try {
       const event = req.body;
+      console.log(req.body);
       const billId = event.data.order_no;
       const bill = await AV.Object.createWithoutData('Bill', billId).fetch({
         include: ['orders'],
