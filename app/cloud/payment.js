@@ -23,7 +23,7 @@ M9hp7LHJYAAF0/H6yiECQQDKjBUz3GerX+53RmKKgQKWa0R+SPxyyute5Yct+U6l
 const pingpp = require('pingpp')('sk_test_KW5e58uX1uHGubzvHGqb1WTK');
 pingpp.setPrivateKey(PRIVATE_KEY);
 
-class Bill extends AV.Object {}
+export class Bill extends AV.Object {}
 AV.Object.register(Bill);
 
 AV.Cloud.define('generateBill', async (request, response) => {
