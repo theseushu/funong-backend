@@ -52,7 +52,7 @@ export default (app) => {
     try {
       const event = req.body;
       console.log(req.body);
-      const billId = event.data.order_no;
+      const billId = event.data.object.order_no;
       const bill = await AV.Object.createWithoutData('Bill', billId).fetch({
         include: ['orders'],
       }, {
@@ -71,6 +71,8 @@ export default (app) => {
       await AV.Object.saveAll(avOrders, {
         useMasterKey: true,
       });
+      bill.set('result', event);
+      await bill.save(null, { useMasterKey: true });
       res.status(200).send('ok');
     } catch (err) {
       console.log(err);
