@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import bodyParser from 'body-parser';
 import AV from 'leanengine';
 import './cloud';
+import initHooks from './hooks';
 
 AV.init({
   appId: process.env.LEANCLOUD_APP_ID || 'ouy08OrFpGAJNxS1T69ceUH7-gzGzoHsz',
@@ -34,6 +35,8 @@ export default () => {
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: false }));
   app.use(cookieParser());
+
+  initHooks(app);
 
   app.use(proxy('https://api.leancloud.cn', {
     intercept(rsp, data, req, res, callback) {
