@@ -57,14 +57,19 @@ export default (app) => {
       }, {
         useMasterKey: true,
       });
+      if (!bill) {
+        throw new Error(`Bill ${billId} not exist`);
+      }
       const avOrders = bill.get('orders');
+      if (!avOrders || avOrders.length === 0) {
+        throw new Error(`Bill ${billId} has no order`);
+      }
       avOrders.forEach((avOrder) => {
         avOrder.set('status', statusValues.payed.value);
       });
       await AV.Object.saveAll(avOrders, {
         useMasterKey: true,
       });
-      console.log(avOrders)
       res.status(200).send('ok');
     } catch (err) {
       console.log(err);
