@@ -103,7 +103,7 @@ const createQuery = (schema, { sort, page, pageSize, ...params }) => {
 AV.Cloud.define('pagePublishes', async (request, response) => {
   try {
     const { sessionToken, currentUser, params } = request;
-    const { type, sort, page, pageSize, owner, shop, ...otherParams } = params;
+    const { type, sort, page = 1, pageSize = 20, owner, shop, ...otherParams } = params;
     const schema = publishesSchemas[type];
     if (!schema) {
       throw new Error(`Unknown type ${type}`);

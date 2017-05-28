@@ -1,11 +1,10 @@
-import sign from 'crypto';
-import uuid from 'node-uuid';
+// import sign from 'crypto';
+// import uuid from 'node-uuid';
 import AV from 'leanengine';
 import { calculateOrder } from 'funong-common/lib/utils/orderUtils';
-import { statusValues } from 'funong-common/lib/appConstants';
-import orderToJSON from 'funong-common/lib/converters/order';
-const BEECLUOD_APPID = '5cf8154e-b7e6-4443-a421-f922ca52a0fb';
-const BEECLOUD_SECRET = '81c9fba9-fe1f-49ee-a4ec-8efe8dc5e4d0';
+// import { orderToJSON } from './converters';
+// const BEECLUOD_APPID = '5cf8154e-b7e6-4443-a421-f922ca52a0fb';
+// const BEECLOUD_SECRET = '81c9fba9-fe1f-49ee-a4ec-8efe8dc5e4d0';
 
 class Order extends AV.Object {}
 AV.Object.register(Order);
@@ -65,6 +64,7 @@ AV.Cloud.define('createOrders', async (request, response) => {
 AV.Cloud.define('commitOrder', async (request, response) => {
   try {
     const { currentUser, sessionToken, params } = request;
+    // todo pass orderId as param. not the whole order object
     if (!params.order) {
       throw new Error('No order found in request');
     }
@@ -101,49 +101,113 @@ AV.Cloud.define('commitOrder', async (request, response) => {
   }
 });
 
-AV.Cloud.define('generateBeecloudBill', async (request, response) => {
+const createQuery = ({ userId, shopId, status, type, sort, page, pageSize }) => {
+  const query = shopId ? AV.Query.or(
+    new AV.Query('Order').equalTo('owner', AV.Object.createWithoutData('_User', userId)),
+    new AV.Query('Order').equalTo('user', AV.Object.createWithoutData('_User', userId)),
+    new AV.Query('Order').equalTo('shop', AV.Object.createWithoutData('Shop', shopId)),
+  ) : AV.Query.or(
+    new AV.Query('Order').equalTo('owner', AV.Object.createWithoutData('_User', userId)),
+    new AV.Query('Order').equalTo('user', AV.Object.createWithoutData('_User', userId)),
+  );
+  query.include([
+    'shop', 'shop.thumbnail',
+    'owner', 'owner.avatar',
+    'user', 'user.avatar',
+    'agent', 'agent.avatar',
+  ]);
+  const statusArray = (Array.isArray(status) ? status : [status]).filter((s) => s != null);
+  if (statusArray.length > 0) {
+    query.containedIn('status', statusArray.map((s) => Number(s)).filter((s) => Number.isInteger(s)));
+  }
+  if (type) {
+    query.equalTo('type', type);
+  }
+  if (sort && sort.sort) {
+    if (sort.order === 'asc') {
+      query.addAscending(sort.sort);
+    } else {
+      query.addDescending(sort.sort);
+    }
+  }
+  if (page && pageSize) {
+    query
+      .skip((page - 1) * pageSize)
+      .limit(pageSize);
+  }
+  return query;
+};
+
+AV.Cloud.define('pageOrders', async (request, response) => {
   try {
-    const { sessionToken, currentUser, params } = request;
-    // const orderId = params.objectId;
-    // if (!orderId || !currentUser) {
-    //   throw new Error('');
-    // }
-    // const avOrder = await AV.Object.createWithoutData('Order', orderId).fetch(null, { sessionToken });
-    // const order = calculateOrder(orderToJSON(avOrder), { objectId: currentUser.id });
-    // if (order.owner.objectId !== currentUser.id || order.status !== statusValues.billed.value) {
-    //   throw new Error('');
-    // }
-    // const calculated = calculateOrder(orderToJSON(avOrder), { objectId: currentUser.id });
-    // const amount = calculated.amount.toString();
-    // const title = '1111';
-    //
-    // const outTradeNo = uuid.v4().replace(/-/g, '');
-    //
-    // const data = BEECLUOD_APPID + title + amount + outTradeNo + BEECLOUD_SECRET;
-    // console.log(data);
-    // const signStr = sign.createHash('md5').update(data, 'utf8').digest('hex');
-    //
-    // console.log(JSON.stringify({
-    //   title, amount, outTradeNo, signStr,
-    // }));
-    const appid = BEECLUOD_APPID;
-    const secret = BEECLOUD_SECRET;
-    const title = '中文 node.js water';
-    const amount = '1';
+    const { currentUser, sessionToken, params } = request;
+    const { status, type, sort, page = 1, pageSize = 10 } = params;
 
-    let outTradeNo = uuid.v4();
-    outTradeNo = outTradeNo.replace(/-/g, '');
+    const shop = await new AV.Query('Shop').equalTo('owner', AV.Object.createWithoutData('_User', currentUser.id)).first();
+    const shopId = shop ? shop.id : null;
 
-    const data = appid + title + amount + outTradeNo + secret;
-    const signStr = sign.createHash('md5').update(data, 'utf8').digest('hex');
+    const query = createQuery({ userId: currentUser.id, shopId, status, type, sort, page, pageSize });
+    const countQuery = createQuery({ userId: currentUser.id, shopId, status, type });
+    const [count, orders] = await Promise.all([countQuery.count({ sessionToken }), query.find({ sessionToken })]);
     response.success({
-      title,
-      amount,
-      outTradeNo,
-      sign: signStr,
+      total: count,
+      totalPages: Math.ceil(count / pageSize),
+      page,
+      pageSize,
+      first: page === 1,
+      last: count <= page * pageSize,
+      results: orders,
     });
   } catch (err) {
     console.error(err);
     response.error(err);
   }
 });
+
+
+// AV.Cloud.define('generateBeecloudBill', async (request, response) => {
+//   try {
+//     const { sessionToken, currentUser, params } = request;
+//     // const orderId = params.objectId;
+//     // if (!orderId || !currentUser) {
+//     //   throw new Error('');
+//     // }
+//     // const avOrder = await AV.Object.createWithoutData('Order', orderId).fetch(null, { sessionToken });
+//     // const order = calculateOrder(orderToJSON(avOrder), { objectId: currentUser.id });
+//     // if (order.owner.objectId !== currentUser.id || order.status !== statusValues.billed.value) {
+//     //   throw new Error('');
+//     // }
+//     // const calculated = calculateOrder(orderToJSON(avOrder), { objectId: currentUser.id });
+//     // const amount = calculated.amount.toString();
+//     // const title = '1111';
+//     //
+//     // const outTradeNo = uuid.v4().replace(/-/g, '');
+//     //
+//     // const data = BEECLUOD_APPID + title + amount + outTradeNo + BEECLOUD_SECRET;
+//     // console.log(data);
+//     // const signStr = sign.createHash('md5').update(data, 'utf8').digest('hex');
+//     //
+//     // console.log(JSON.stringify({
+//     //   title, amount, outTradeNo, signStr,
+//     // }));
+//     const appid = BEECLUOD_APPID;
+//     const secret = BEECLOUD_SECRET;
+//     const title = '中文 node.js water';
+//     const amount = '1';
+//
+//     let outTradeNo = uuid.v4();
+//     outTradeNo = outTradeNo.replace(/-/g, '');
+//
+//     const data = appid + title + amount + outTradeNo + secret;
+//     const signStr = sign.createHash('md5').update(data, 'utf8').digest('hex');
+//     response.success({
+//       title,
+//       amount,
+//       outTradeNo,
+//       sign: signStr,
+//     });
+//   } catch (err) {
+//     console.error(err);
+//     response.error(err);
+//   }
+// });

@@ -37,6 +37,7 @@
     "lodash": "4.17.2",
     "moment": "^2.18.1",
     "node-uuid": "^1.4.8",
+    "pingpp": "^2.0.11",
     "querystring": "0.2.0",
     "superagent": "^3.3.1",
     "timeago.js": "^3.0.1",

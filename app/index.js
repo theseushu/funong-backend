@@ -18,7 +18,7 @@ AV.Cloud.useMasterKey();
 
 export default () => {
   const app = express();
-
+  app.enable('trust proxy');
   app.use(express.static('public'));
 
   // 设置默认超时时间
