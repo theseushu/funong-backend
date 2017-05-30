@@ -53,7 +53,10 @@ AV.Cloud.define('generateBill', async (request, response) => {
         currency: 'cny',
         subject: '富农商城担保交易',
         body: `共需支付￥${amount / 100}`,
-        extra,
+        extra: channel === 'wx_pub_qr' ? {
+          ...extra,
+          product_id: bill.id,
+        } : extra,
       }, (err, result) => {
         if (result) {
           resolve(result);
